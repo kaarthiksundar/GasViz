@@ -1,0 +1,22 @@
+{
+  "name": "gasapp",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "buffer": "^6.0.3",
+    "leaflet": "^1.9.4",
+    "leaflet-hotline": "^0.4.0",
+    "preact": "^10.27.2",
+    "wkx": "^0.5.0"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.2",
+    "vite": "^7.1.6"
+  }
+}
