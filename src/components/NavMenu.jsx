@@ -14,10 +14,10 @@ export default function NavMenu() {
     ];
     
     return (
-        <nav class="ph3 ph5-ns w-100 bg-transparent pv3 mb3 mb5-ns bt bb b--black-10 overflow-auto">
-            <div class="nowrap mw9">
+        <nav class="pa3 ph5-ns w-100 bg-transparent pv3 mb3 mb5-ns bt bb b--black-10 overflow-auto">
+            <div class="nowrap mw9 center">
                 {links.map((item) => (
-                    <a class="pv1-ns f6 fw6 dim link black mr3 mr3-m mr4-l dib" 
+                    <a class="pv1-ns f5 fw5 dim link black mr3 mr3-m mr4-l dib" 
                     title={item.name} href={item.route}>{item.name}</a>
                 ))}
             </div>
