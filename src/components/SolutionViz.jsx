@@ -49,15 +49,38 @@ export default function SolutionVizualizer() {
 
   return (
     <div class="mw8 center">
-      <h1 class="mt4 f5 f4-ns">Visualization</h1>
+      <h1 class="mt4 f6 f5-ns ttu tracked">Visualization</h1>
       <CaseSelector setData={setData} />
+      <a class="f6 link dim ba pa2 mb2 dib black" href="#0">
+        Network
+      </a>
+      &nbsp;&nbsp;
+      <a class="f6 link dim ba pa2 mb2 dib black" href="#0">
+        Compressors
+      </a>
+      &nbsp;&nbsp;
+      <a class="f6 link dim ba pa2 mb2 dib black" href="#0">
+        Nominations
+      </a>
+      &nbsp;&nbsp;
+      <a class="f6 link dim ba pa2 mb2 dib black" href="#0">
+        Clear
+      </a>
+      &nbsp;&nbsp;
+      <a class="f6 link dim ba pa2 mb2 dib black" href="#0">
+        Pressures
+      </a>
+      &nbsp;&nbsp;
+      <a class="f6 link dim ba pa2 mb2 dib black" href="#0">
+        Flows
+      </a>
       <div
         id="map"
         ref={mapEl}
         class="mw6 ba bw2 b--gray"
         style={{ height: '400px' }}
       />
-      <h1 class="mt4 f5 f4-ns">Pipeline network statistics</h1>
+      <h1 class="mt4 f6 f5-ns ttu tracked">Pipeline network statistics</h1>
       <p class="measure-wide lh-copy">
         {stats != null && (
           <span>

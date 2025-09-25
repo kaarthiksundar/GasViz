@@ -10,7 +10,7 @@ export function App() {
       <NavMenu />
       <article class="ph3 ph5-ns">
         <div class="mw8 center">
-          <h1 class="mt0 f5 f4-ns">Basic instructions</h1>
+          <h1 class="mt0 f6 f5-ns ttu tracked">Instructions</h1>
           <p class="f5 measure lh-copy">
             First, select the pipeline case folder. It should contain the files
             geo.json, network.json and nominations.json. If the files are not
