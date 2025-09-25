@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'preact/hooks';
 import L from 'leaflet';
 import CaseSelector from './CaseSelector.jsx';
+import Button from './Button.jsx';
 import StatsTable from './StatsTable.jsx';
 import { getPolyline, getPoint } from '../geo-helpers.jsx';
 
@@ -43,10 +44,10 @@ export default function SolutionVizualizer() {
     if (!mapEl.current) return;
     const map = L.map(mapEl.current).setView([39.8283, -98.5795], 4);
     L.tileLayer(
-      'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+      'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',
       {
         maxZoom: 20,
-        attribution: '&copy; OpenStreetMap',
+        // attribution: '&copy; OpenStreetMap',
       }
     ).addTo(map);
     mapRef.current = map;
@@ -70,12 +71,16 @@ export default function SolutionVizualizer() {
     const pipeIds = Object.keys(net.pipes);
     pipeIds.forEach((id) => {
       const pts = getPolyline(source[id]);
-      const layer = L.polyline(pts, { opacity: 0.6 });
+      const layer = L.polyline(pts, {
+        color: 'orange',
+        weight: 3,
+        opacity: 0.6,
+      });
       layer.addTo(group);
-      layer.bringToBack();
       pts.forEach(([lat, lng]) => allBounds.extend([lat, lng]));
     });
     group.addTo(map);
+    group.bringToBack();
     networkRef.current = group;
     if (allBounds && allBounds.isValid()) {
       map.fitBounds(allBounds, { padding: [5, 5] });
@@ -116,11 +121,10 @@ export default function SolutionVizualizer() {
         color: 'black',
         weight: 1,
         opacity: 0.5,
-        fillColor: 'red', // Fill color
+        fillColor: 'blue', // Fill color
         fillOpacity: 0.7, // Fill opacity
-        radius: 3,
+        radius: 2,
       });
-      layer.bringToFront();
       layer.addTo(group);
       allBounds.extend(pt[0]);
     });
@@ -135,21 +139,9 @@ export default function SolutionVizualizer() {
     <div class="mw8 center">
       <h1 class="mt4 f6 f5-ns ttu tracked">Visualization</h1>
       <CaseSelector setData={setData} />
-      <a
-        class="f6 link dim ba pa2 mb2 dib black"
-        href="#0"
-        onClick={plotNetwork}
-      >
-        Network
-      </a>
+      <Button buttonText="Network" onClick={plotNetwork} />
       &nbsp;&nbsp;
-      <a
-        class="f6 link dim ba pa2 mb2 dib black"
-        href="#0"
-        onClick={plotCompressors}
-      >
-        Compressors
-      </a>
+      <Button buttonText="Compressors" onClick={plotCompressors} />
       &nbsp;&nbsp;
       <a class="f6 link dim ba pa2 mb2 dib black" href="#0">
         Nominations
@@ -163,9 +155,7 @@ export default function SolutionVizualizer() {
         Flows
       </a>
       &nbsp;&nbsp;
-      <a class="f6 link dim ba pa2 mb2 dib black" href="#0" onClick={clear}>
-        Clear
-      </a>
+      <Button buttonText="Clear" onClick={clear} />
       <div
         id="map"
         ref={mapEl}
