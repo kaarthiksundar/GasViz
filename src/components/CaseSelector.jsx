@@ -26,7 +26,6 @@ export default function CaseSelector({ setData }) {
         return acc;
       }, {});
 
-      console.log(topLevelFiles);
       const missingFiles = requiredFiles.filter(
         (requiredFile) => !topLevelFiles[requiredFile]
       );
