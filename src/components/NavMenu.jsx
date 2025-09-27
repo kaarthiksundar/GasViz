@@ -8,9 +8,9 @@ class Link {
 export default function NavMenu() {
   var links = [
     new Link('Steady State Solution', '/#!'),
-    new Link('Steady State Model Comparison', '/#!/1'),
-    new Link('Relevant Publications', '/#!/2'),
-    new Link('README', '/#!/3'),
+    // new Link('Steady State Model Comparison', '/#!/1'),
+    // new Link('Relevant Publications', '/#!/2'),
+    // new Link('README', '/#!/3'),
   ];
 
   return (
