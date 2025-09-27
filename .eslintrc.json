@@ -1,0 +1,14 @@
+{
+  "extends": [
+    "eslint:recommended",
+    "preact",
+    // Add "prettier" to the end to ensure it has the final say in formatting.
+    "prettier" 
+  ],
+  "plugins": [
+    "prettier"
+  ],
+  "rules": {
+    "prettier/prettier": "error"
+  }
+}
