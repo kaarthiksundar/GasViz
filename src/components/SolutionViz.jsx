@@ -1,10 +1,15 @@
 import { useState, useRef, useEffect } from 'preact/hooks';
 import L from 'leaflet';
+import hotline from 'leaflet-hotline';
+hotline(L);
 import CaseSelector from './CaseSelector.jsx';
 import Button from './Button.jsx';
 import StatsTable from './StatsTable.jsx';
 import { getPolyline, getPoint } from '../geo-helpers.jsx';
 import 'leaflet-svg-shape-markers';
+import 'leaflet-arrowheads';
+import SolutionFileSelector from './SolutionFileSelector.jsx';
+import { interpolatePressures, interpolateColor } from '../helpers.jsx';
 
 const mapLinear = (value, inMin, inMax, outMin, outMax) => {
   if (inMax - inMin === 0) {
@@ -16,11 +21,18 @@ const mapLinear = (value, inMin, inMax, outMin, outMax) => {
 
 export default function SolutionVizualizer() {
   const [data, setData] = useState(null);
+  const [solution, setSolution] = useState(null);
+  const [mapSize, setMapSize] = useState({
+    ht: '400px',
+    st: 'mw6 ba bw2 b--gray',
+  });
   const mapEl = useRef(null);
   const mapRef = useRef(null);
   const networkRef = useRef(null);
   const compressorRef = useRef(null);
   const nominationRef = useRef(null);
+  const pressureRef = useRef(null);
+  const flowRef = useRef(null);
   const [stats, setStats] = useState(null);
 
   /* render the pipeline statistics when data is populated using the useEffect hook */
@@ -65,12 +77,24 @@ export default function SolutionVizualizer() {
       }
     ).addTo(map);
     mapRef.current = map;
+    if (networkRef.current) plotNetwork();
+    if (compressorRef.current) plotCompressors();
+    if (nominationRef.current) plotNominations();
+    if (pressureRef.current) plotPressures();
+    if (flowRef.current) plotFlows();
     return () => map.remove();
-  }, []);
+  }, [mapSize]);
 
   /* function to plot the network - passed to the corresponding button */
   const plotNetwork = () => {
     if (data == null) return;
+    const refs = [pressureRef, flowRef];
+    refs.forEach((ref) => {
+      if (ref.current) {
+        map.removeLayer(ref.current);
+        ref.current = null;
+      }
+    });
     const geo = data.geo;
     const net = data.network;
     const map = mapRef.current;
@@ -105,19 +129,6 @@ export default function SolutionVizualizer() {
     if (allBounds && allBounds.isValid()) {
       map.fitBounds(allBounds, { padding: [5.5, 5.5] });
     }
-  };
-
-  /* function to clear the map - passed to the corresponding button */
-  const clear = () => {
-    const map = mapRef.current;
-    const refs = [networkRef, compressorRef, nominationRef];
-    refs.forEach((ref) => {
-      if (ref.current) {
-        map.removeLayer(ref.current);
-        ref.current = null;
-      }
-    });
-    return;
   };
 
   /* function to plot the compressors - passed to the corresponding button */
@@ -270,30 +281,171 @@ export default function SolutionVizualizer() {
     nominationRef.current = group;
   };
 
+  /* function to plot pressures - passed to corresponding button */
+  const plotPressures = () => {
+    if (data == null) return;
+    if (solution == null) return;
+    const geo = data.geo;
+    const net = data.network;
+    const pressures = solution.nodal_pressure;
+    const map = mapRef.current;
+    if (!map || !geo || !pressures || typeof geo !== 'object') return;
+    clear();
+    const maxP = Math.max(...Object.values(pressures));
+    const minP = Math.min(...Object.values(pressures));
+    const group = L.featureGroup();
+    let allBounds = L.latLngBounds([]);
+    const source = geo && (geo.pipes ?? geo);
+    const pipeIds = Object.keys(net.pipes);
+    pipeIds.forEach((id) => {
+      const nodeFr = net.pipes[id]['fr_node'];
+      const nodeTo = net.pipes[id]['to_node'];
+      const pFr = pressures[String(nodeFr)];
+      const pTo = pressures[String(nodeTo)];
+      if (pFr === undefined || pTo === undefined) return;
+      const pts = getPolyline(source[id]);
+      const hotlinePts = interpolatePressures(pts, pFr, pTo);
+      const layer = L.hotline(hotlinePts, {
+        min: minP,
+        max: maxP,
+        palette: {
+          0.0: '#008800',
+          1.0: '#ff0000',
+        },
+        weight: 5,
+        outlineColor: '#000000',
+        outlineWidth: 0,
+      });
+      layer.addTo(group);
+      pts.forEach(([lat, lng]) => allBounds.extend([lat, lng]));
+    });
+    group.addTo(map);
+    group.bringToBack();
+    networkRef.current = group;
+    if (allBounds && allBounds.isValid()) {
+      map.fitBounds(allBounds, { padding: [5.5, 5.5] });
+    }
+  };
+
+  /* function to plot flows - passed to the corresponding button */
+  const plotFlows = () => {
+    if (data == null) return;
+    if (solution == null) return;
+    const geo = data.geo;
+    const net = data.network;
+    const flows = solution.pipe_flow;
+    const map = mapRef.current;
+    if (!map || !geo || !flows || typeof geo !== 'object') return;
+    clear();
+    const flowValues = [...Object.values(flows)].map(Math.abs);
+    const maxF = Math.max(...flowValues);
+    const minF = Math.min(...flowValues);
+    const group = L.featureGroup();
+    let allBounds = L.latLngBounds([]);
+    const source = geo && (geo.pipes ?? geo);
+    const pipeIds = Object.keys(net.pipes);
+    pipeIds.forEach((id) => {
+      const flowVal = Math.round(flows[id] * 1000.0) / 1000.0;
+      if (flowVal === undefined) return;
+      const pts = getPolyline(source[id]);
+      if (flowVal < 0.0) pts.reverse();
+      const color = interpolateColor(
+        Math.abs(flowVal),
+        minF,
+        maxF,
+        '#fa8072',
+        '#2e8b57'
+      );
+      const layer = L.polyline(pts, {
+        color: color,
+        weight: 3,
+      }).arrowheads({
+        yawn: 60,
+        fill: true,
+        opacity: 0.6,
+        frequency: 5,
+        size: '25m',
+        offsets: { end: '15px' },
+      });
+      layer.bindTooltip(`Pipe id: (${id}, ${flowVal})`, {
+        permanent: false, // Tooltip appears only on hover
+        direction: 'auto', // Tooltip direction adapts to available space
+        sticky: true, // Tooltip follows the mouse cursor
+        className: 'f6',
+      });
+      layer.addTo(group);
+      pts.forEach(([lat, lng]) => allBounds.extend([lat, lng]));
+    });
+    group.addTo(map);
+    group.bringToBack();
+    networkRef.current = group;
+    if (allBounds && allBounds.isValid()) {
+      map.fitBounds(allBounds, { padding: [5.5, 5.5] });
+    }
+  };
+
+  /* function to clear the map - passed to the corresponding button */
+  const clear = () => {
+    const map = mapRef.current;
+    const refs = [
+      networkRef,
+      compressorRef,
+      nominationRef,
+      pressureRef,
+      flowRef,
+    ];
+    refs.forEach((ref) => {
+      if (ref.current) {
+        map.removeLayer(ref.current);
+        ref.current = null;
+      }
+    });
+    return;
+  };
+
+  /* function to toggle map size - passed to the corresponding button */
+  const toggleSize = () => {
+    if (mapSize.ht == '400px') {
+      setMapSize({
+        ht: '500px',
+        st: 'mw7 ba bw2 b--gray',
+      });
+    } else {
+      setMapSize({
+        ht: '400px',
+        st: 'mw6 ba bw2 b--gray',
+      });
+    }
+  };
+
   return (
     <div class="mw8 center">
       <h1 class="mt4 f6 f5-ns ttu tracked">Visualization</h1>
       <CaseSelector setData={setData} />
+      <SolutionFileSelector setSolution={setSolution} />
       <Button buttonText="Network" onClick={plotNetwork} />
       &nbsp;&nbsp;
       <Button buttonText="Compressors" onClick={plotCompressors} />
       &nbsp;&nbsp;
       <Button buttonText="Nominations" onClick={plotNominations} />
       &nbsp;&nbsp;
-      <a class="f6 link dim ba pa2 mb2 dib black" href="#0">
-        Pressures
-      </a>
+      <Button buttonText="Pressures" onClick={plotPressures} />
       &nbsp;&nbsp;
-      <a class="f6 link dim ba pa2 mb2 dib black" href="#0">
-        Flows
-      </a>
+      <Button buttonText="Flows" onClick={plotFlows} />
       &nbsp;&nbsp;
       <Button buttonText="Clear" onClick={clear} />
+      &nbsp;&nbsp;
+      {/* <a class="f6 link dim ba pa2 mb2 dib black" href="#0">
+        Export as PDF
+      </a>
+      &nbsp;&nbsp; */}
+      <Button buttonText="Toggle size" onClick={toggleSize} />
+      &nbsp;&nbsp;
       <div
         id="map"
         ref={mapEl}
-        class="mw6 ba bw2 b--gray"
-        style={{ height: '400px' }}
+        class={mapSize.st}
+        style={{ height: mapSize.ht }}
       />
       <h1 class="mt4 f6 f5-ns ttu tracked">Pipeline network statistics</h1>
       <StatsTable stats={stats} />
