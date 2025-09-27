@@ -16,7 +16,9 @@ export function App() {
             geo.json, network.json and nominations.json. If the files are not
             available in the folder, you will see a missing files error message,
             otherwise you should see a success message. Other button names are
-            self-explanatory.
+            self-explanatory. Unit of mass flow rate are in Mdthpd (1000
+            decatherms per day) and unit of pressure is psi (pounds per square
+            inch). 1 Mdthpd equals 0.25 kgps.
           </p>
         </div>
         <SolutionVizualizer />
