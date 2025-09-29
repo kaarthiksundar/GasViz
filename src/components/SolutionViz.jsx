@@ -402,10 +402,6 @@ export default function SolutionVizualizer() {
         ref.current = null;
       }
     });
-    if (pressureLegendRef.current) {
-      pressureLegendRef.current.remove();
-      pressureLegendRef.current = null;
-    }
     return;
   };
 
