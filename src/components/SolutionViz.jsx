@@ -309,19 +309,19 @@ export default function SolutionVizualizer() {
         min: minP,
         max: maxP,
         palette: {
-          0.0: '#008800',
-          1.0: '#ff0000',
+          0.0: 'dodgerBlue',
+          1.0: 'indianRed',
         },
         weight: 5,
         outlineColor: '#000000',
-        outlineWidth: 0,
+        outlineWidth: 0.0,
       });
       layer.addTo(group);
       pts.forEach(([lat, lng]) => allBounds.extend([lat, lng]));
     });
     group.addTo(map);
     group.bringToBack();
-    networkRef.current = group;
+    pressureRef.current = group;
     if (allBounds && allBounds.isValid()) {
       map.fitBounds(allBounds, { padding: [5.5, 5.5] });
     }
@@ -359,14 +359,15 @@ export default function SolutionVizualizer() {
       const layer = L.polyline(pts, {
         color: color,
         weight: 3,
-      }).arrowheads({
-        yawn: 60,
-        fill: true,
-        opacity: 0.6,
-        frequency: 5,
-        size: '25m',
-        offsets: { end: '15px' },
       });
+      //   }).arrowheads({
+      //     yawn: 60,
+      //     fill: true,
+      //     opacity: 0.6,
+      //     frequency: 5,
+      //     size: '25m',
+      //     offsets: { end: '15px' },
+      //   });
       layer.bindTooltip(`Pipe id: (${id}, ${flowVal})`, {
         permanent: false, // Tooltip appears only on hover
         direction: 'auto', // Tooltip direction adapts to available space
@@ -387,6 +388,7 @@ export default function SolutionVizualizer() {
   /* function to clear the map - passed to the corresponding button */
   const clear = () => {
     const map = mapRef.current;
+    if (!map) return;
     const refs = [
       networkRef,
       compressorRef,
@@ -396,10 +398,14 @@ export default function SolutionVizualizer() {
     ];
     refs.forEach((ref) => {
       if (ref.current) {
-        map.removeLayer(ref.current);
+        if (map.hasLayer(ref.current)) map.removeLayer(ref.current);
         ref.current = null;
       }
     });
+    if (pressureLegendRef.current) {
+      pressureLegendRef.current.remove();
+      pressureLegendRef.current = null;
+    }
     return;
   };
 
